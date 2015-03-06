@@ -29,7 +29,7 @@ module Ruboty
       rescue Twitter::Error => exception
         message.reply("#{exception.class}: #{exception}")
       ensure
-        true
+        return true
       end
 
       private
