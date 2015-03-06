@@ -19,7 +19,7 @@ module Ruboty
         name: :search,
       )
 
-      # @todo
+      # @return [true] to prevent running missing handlers.
       def search(message)
         statuses = client.search(message[:query], since_id: fetch_since_id_for(message[:query])).take(10)
         if statuses.any?
@@ -28,6 +28,8 @@ module Ruboty
         end
       rescue Twitter::Error => exception
         message.reply("#{exception.class}: #{exception}")
+      ensure
+        true
       end
 
       private
