@@ -1,3 +1,6 @@
+## 0.0.4
+- Fix bug on v0.0.3
+
 ## 0.0.3
 - Prevent running missing handlers on empty result
 
