@@ -26,6 +26,8 @@ module Ruboty
           message.reply(StatusesView.new(statuses).to_s)
           store_since_id(query: message[:query], since_id: statuses.first.id)
         end
+      rescue Twitter::Error => exception
+        message.reply("#{exception.class}: #{exception}")
       end
 
       private
