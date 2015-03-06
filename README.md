@@ -1,31 +1,12 @@
 # Ruboty::TwitterSearch
-
-TODO: Write a gem description
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'ruboty-twitter_search'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install ruboty-twitter_search
+[Ruboty](https://github.com/r7kamura/ruboty-twitter_search) plug-in to search twitter.
 
 ## Usage
+```
+@ruboty search twitter by <query>
+```
 
-TODO: Write usage instructions here
-
-## Contributing
-
-1. Fork it ( https://github.com/[my-github-username]/ruboty-twitter_search/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create a new Pull Request
+## ENV
+```
+DISABLE_SINCE_ID - Pass 1 to disable using since_id parameter (optional)
+```
