@@ -8,5 +8,5 @@
 
 ## ENV
 ```
-DISABLE_SINCE_ID - Pass 1 to disable using since_id parameter (optional)
+TWITTER_DISABLE_SINCE_ID - Pass 1 to disable using since_id parameter (optional)
 ```
