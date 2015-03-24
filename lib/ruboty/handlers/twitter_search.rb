@@ -21,9 +21,12 @@ module Ruboty
 
       # @return [true] to prevent running missing handlers.
       def search(message)
-        message = Message.parse(message[:query])
-        # http://www.rubydoc.info/gems/twitter/Twitter/REST/Search#search-instance_method
-        statuses = client.search(message.word, since_id: fetch_since_id_for(message.since_id)).take(10)
+        options = Query.parse(message[:query])
+        search_param = { since_id: fetch_since_id_for(message[:query]), result_type: options.result_type }
+        statuses = client.search(options.word, search_param).take(10)
+        statuses.select! { |status| status.retweet_count > options.retweet.to_i } unless options.retweet.nil?
+        statuses.select! { |status| status.favorite_count > options.fav.to_i } unless options.fav.nil?
+
         if statuses.any?
           message.reply(StatusesView.new(statuses).to_s)
           store_since_id(query: message[:query], since_id: statuses.first.id)
@@ -87,7 +90,7 @@ module Ruboty
       end
     end
 
-    class Message
+    class Query
       DELIMITER = ' '
 
       def self.parse(query)
@@ -104,8 +107,8 @@ module Ruboty
         @options['word']
       end
 
-      def since_id
-        @options['since_id']
+      def result_type
+        @options['result_type']
       end
 
       def retweet
