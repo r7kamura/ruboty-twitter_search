@@ -94,7 +94,7 @@ module Ruboty
       DELIMITER = " "
 
       def self.parse(query)
-        return self.new({"word" => query}) if query.split(DELIMITER).size == 1
+        return self.new("word" => query) if query.split(DELIMITER).size == 1
         options = JSON.parse("{#{query.gsub(/(\w+):(\w+)/, '"\1":"\2",').chomp(',')}}") # go bold
         self.new(options)
       end
