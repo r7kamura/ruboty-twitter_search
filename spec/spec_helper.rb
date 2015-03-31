@@ -1,3 +1,8 @@
+if ENV["CI"]
+  require "codeclimate-test-reporter"
+  CodeClimate::TestReporter.start
+end
+
 require "ruboty/twitter_search"
 
 RSpec.configure do |config|
