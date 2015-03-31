@@ -91,10 +91,10 @@ module Ruboty
     end
 
     class Query
-      DELIMITER = ' '
+      DELIMITER = " "
 
       def self.parse(query)
-        return self.new({'word' => query}) if query.split(DELIMITER).size == 1
+        return self.new({"word" => query}) if query.split(DELIMITER).size == 1
         options = JSON.parse("{#{query.gsub(/(\w+):(\w+)/, '"\1":"\2",').chomp(',')}}") # go bold
         self.new(options)
       end
@@ -104,19 +104,19 @@ module Ruboty
       end
 
       def word
-        @options['word']
+        @options["word"]
       end
 
       def result_type
-        @options['result_type']
+        @options["result_type"]
       end
 
       def retweet
-        @options['retweet']
+        @options["retweet"]
       end
 
       def fav
-        @options['fav']
+        @options["fav"]
       end
     end
   end
