@@ -5,6 +5,7 @@ module Ruboty
   module Handlers
     class TwitterSearch < Base
       NAMESPACE = "twitter-search"
+      TWEETS_COUNT = 10
 
       env :TWITTER_ACCESS_TOKEN, "Twitter access token"
       env :TWITTER_ACCESS_TOKEN_SECRET, "Twitter access token secret"
@@ -20,11 +21,21 @@ module Ruboty
 
       # @return [true] to prevent running missing handlers.
       def search(message)
-        options = Query.parse(message[:query])
-        search_param = { since_id: fetch_since_id_for(message[:query]), result_type: options.result_type }
-        statuses = client.search(options.word, search_param).take(10)
-        statuses.select! { |status| status.retweet_count > options.retweet.to_i } unless options.retweet.nil?
-        statuses.select! { |status| status.favorite_count > options.fav.to_i } unless options.fav.nil?
+        query = Query.new(message[:query])
+
+        statuses = client.search(
+          query.query_string,
+          result_type: query.result_type,
+          since_id: fetch_since_id_for(message[:query]),
+        ).take(TWEETS_COUNT)
+
+        statuses.select! do |status|
+          status.retweet_count >= query.minimum_retweet_count
+        end
+
+        statuses.select! do |status|
+          status.favorite_count >= query.minimum_favorite_count
+        end
 
         if statuses.any?
           message.reply(StatusesView.new(statuses).to_s)
@@ -71,32 +82,51 @@ module Ruboty
       end
 
       class Query
-        DELIMITER = " "
+        DEFAULT_MINIMUM_FAVORITE_COUNT = 0
+        DEFAULT_MINIMUM_RETWEET_COUNT = 0
 
-        def self.parse(query)
-          return new("word" => query) if query.split(DELIMITER).size == 1
-          options = JSON.parse("{#{query.gsub(/(\w+):(\w+)/, '"\1":"\2",').chomp(',')}}") # go bold
-          new(options)
+        # @param [String] original_query_string
+        def initialize(original_query_string)
+          @original_query_string = original_query_string
         end
 
-        def initialize(options)
-          @options = options
+        # @return [Fixnum]
+        def minimum_favorite_count
+          if token = tokens.find(&:favorite_count_filter?)
+            token.favorite_count
+          else
+            DEFAULT_MINIMUM_FAVORITE_COUNT
+          end
         end
 
-        def word
-          @options["word"]
+        # @return [Fixnum]
+        def minimum_retweet_count
+          if token = tokens.find(&:retweet_count_filter?)
+            token.retweet_count
+          else
+            DEFAULT_MINIMUM_RETWEET_COUNT
+          end
         end
 
+        # @return [String]
+        def query_string
+          tokens.reject(&:filter?).join(" ")
+        end
+
+        # @return [String, nil]
         def result_type
-          @options["result_type"]
+          if token = tokens.find(&:result_type_filter?)
+            token.result_type
+          end
         end
 
-        def retweet
-          @options["retweet"]
-        end
+        private
 
-        def fav
-          @options["fav"]
+        # @return [Array<Ruboty::Handlers::TwitterSearch::Token>]
+        def tokens
+          @tokens ||= @original_query_string.split.map do |token_string|
+            Token.new(token_string)
+          end
         end
       end
 
@@ -115,6 +145,53 @@ module Ruboty
           @statuses.map do |status|
             "https://twitter.com/#{status.user.screen_name}/status/#{status.id}"
           end
+        end
+      end
+
+      class Token
+        def initialize(token_string)
+          @token_string = token_string
+        end
+
+        # @return [Fixnum, nil]
+        def favorite_count
+          if @token_string.match(/\Afav:(?<count>\d+)\z/)
+            Regexp.last_match(:count).to_i
+          end
+        end
+
+        def favorite_count_filter?
+          !favorite_count.nil?
+        end
+
+        def filter?
+          favorite_count_filter? || result_type_filter? || retweet_count_filter?
+        end
+
+        # @return [String, nil]
+        def result_type
+          if @token_string.match(/\Aresult_type:(?<type>\w+)\z/)
+            Regexp.last_match(:type)
+          end
+        end
+
+        def result_type_filter?
+          !result_type.nil?
+        end
+
+        # @return [Fixnum, nil]
+        def retweet_count
+          if @token_string.match(/\Aretweet:(?<count>\d+)\z/)
+            Regexp.last_match(:count).to_i
+          end
+        end
+
+        def retweet_count_filter?
+          !retweet_count.nil?
+        end
+
+        def to_s
+          @token_string
         end
       end
     end
