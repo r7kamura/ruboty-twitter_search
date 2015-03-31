@@ -1,3 +1,6 @@
+## 0.1.0
+- Support search filter query (Thx @gong023)
+
 ## 0.0.4
 - Fix bug on v0.0.3
 
