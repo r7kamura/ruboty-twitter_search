@@ -1,4 +1,4 @@
-# Ruboty::TwitterSearch
+# Ruboty::TwitterSearch [![Build Status](https://travis-ci.org/r7kamura/ruboty-twitter_search.svg)](https://travis-ci.org/r7kamura/ruboty-twitter_search)
 [Ruboty](https://github.com/r7kamura/ruboty-twitter_search) plug-in to search twitter.
 
 ## Usage
