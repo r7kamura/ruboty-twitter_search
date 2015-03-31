@@ -1,6 +1,5 @@
 require "ruboty"
 require "twitter"
-require "yaml"
 
 module Ruboty
   module Handlers
