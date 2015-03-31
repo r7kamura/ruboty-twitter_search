@@ -31,6 +31,8 @@ module Ruboty
           since_id: fetch_since_id_for(message[:query]),
         ).take(TWEETS_COUNT)
 
+        since_id = statuses.first.id
+
         statuses.select! do |status|
           status.retweet_count >= query.minimum_retweet_count
         end
@@ -41,7 +43,7 @@ module Ruboty
 
         if statuses.any?
           message.reply(Ruboty::TwitterSearch::StatusesView.new(statuses).to_s)
-          store_since_id(query: message[:query], since_id: statuses.first.id)
+          store_since_id(query: message[:query], since_id: since_id)
         end
       rescue ::Twitter::Error => exception
         message.reply("#{exception.class}: #{exception}")
