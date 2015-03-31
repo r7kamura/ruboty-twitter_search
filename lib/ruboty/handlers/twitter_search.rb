@@ -21,7 +21,12 @@ module Ruboty
 
       # @return [true] to prevent running missing handlers.
       def search(message)
-        statuses = client.search(message[:query], since_id: fetch_since_id_for(message[:query])).take(10)
+        options = Query.parse(message[:query])
+        search_param = { since_id: fetch_since_id_for(message[:query]), result_type: options.result_type }
+        statuses = client.search(options.word, search_param).take(10)
+        statuses.select! { |status| status.retweet_count > options.retweet.to_i } unless options.retweet.nil?
+        statuses.select! { |status| status.favorite_count > options.fav.to_i } unless options.fav.nil?
+
         if statuses.any?
           message.reply(StatusesView.new(statuses).to_s)
           store_since_id(query: message[:query], since_id: statuses.first.id)
@@ -82,6 +87,36 @@ module Ruboty
             "https://twitter.com/#{status.user.screen_name}/status/#{status.id}"
           end
         end
+      end
+    end
+
+    class Query
+      DELIMITER = ' '
+
+      def self.parse(query)
+        return self.new({'word' => query}) if query.split(DELIMITER).size == 1
+        options = JSON.parse("{#{query.gsub(/(\w+):(\w+)/, '"\1":"\2",').chomp(',')}}") # go bold
+        self.new(options)
+      end
+
+      def initialize(options)
+        @options = options
+      end
+
+      def word
+        @options['word']
+      end
+
+      def result_type
+        @options['result_type']
+      end
+
+      def retweet
+        @options['retweet']
+      end
+
+      def fav
+        @options['fav']
       end
     end
   end
