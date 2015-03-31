@@ -1,4 +1,6 @@
 require "ruboty"
+require "ruboty/twitter_search/query"
+require "ruboty/twitter_search/statuses_view"
 require "twitter"
 
 module Ruboty
@@ -21,7 +23,7 @@ module Ruboty
 
       # @return [true] to prevent running missing handlers.
       def search(message)
-        query = Query.new(message[:query])
+        query = Ruboty::TwitterSearch::Query.new(message[:query])
 
         statuses = client.search(
           query.query_string,
@@ -38,7 +40,7 @@ module Ruboty
         end
 
         if statuses.any?
-          message.reply(StatusesView.new(statuses).to_s)
+          message.reply(Ruboty::TwitterSearch::StatusesView.new(statuses).to_s)
           store_since_id(query: message[:query], since_id: statuses.first.id)
         end
       rescue Twitter::Error => exception
@@ -78,120 +80,6 @@ module Ruboty
       def store_since_id(query: nil, since_id: nil)
         unless disabled_to_use_since_id?
           store[query] = since_id
-        end
-      end
-
-      class Query
-        DEFAULT_MINIMUM_FAVORITE_COUNT = 0
-        DEFAULT_MINIMUM_RETWEET_COUNT = 0
-
-        # @param [String] original_query_string
-        def initialize(original_query_string)
-          @original_query_string = original_query_string
-        end
-
-        # @return [Fixnum]
-        def minimum_favorite_count
-          if token = tokens.find(&:favorite_count_filter?)
-            token.favorite_count
-          else
-            DEFAULT_MINIMUM_FAVORITE_COUNT
-          end
-        end
-
-        # @return [Fixnum]
-        def minimum_retweet_count
-          if token = tokens.find(&:retweet_count_filter?)
-            token.retweet_count
-          else
-            DEFAULT_MINIMUM_RETWEET_COUNT
-          end
-        end
-
-        # @return [String]
-        def query_string
-          tokens.reject(&:filter?).join(" ")
-        end
-
-        # @return [String, nil]
-        def result_type
-          if token = tokens.find(&:result_type_filter?)
-            token.result_type
-          end
-        end
-
-        private
-
-        # @return [Array<Ruboty::Handlers::TwitterSearch::Token>]
-        def tokens
-          @tokens ||= @original_query_string.split.map do |token_string|
-            Token.new(token_string)
-          end
-        end
-      end
-
-      class StatusesView
-        def initialize(statuses)
-          @statuses = statuses
-        end
-
-        def to_s
-          source_urls.reverse.join("\n")
-        end
-
-        private
-
-        def source_urls
-          @statuses.map do |status|
-            "https://twitter.com/#{status.user.screen_name}/status/#{status.id}"
-          end
-        end
-      end
-
-      class Token
-        def initialize(token_string)
-          @token_string = token_string
-        end
-
-        # @return [Fixnum, nil]
-        def favorite_count
-          if @token_string.match(/\Afav:(?<count>\d+)\z/)
-            Regexp.last_match(:count).to_i
-          end
-        end
-
-        def favorite_count_filter?
-          !favorite_count.nil?
-        end
-
-        def filter?
-          favorite_count_filter? || result_type_filter? || retweet_count_filter?
-        end
-
-        # @return [String, nil]
-        def result_type
-          if @token_string.match(/\Aresult_type:(?<type>\w+)\z/)
-            Regexp.last_match(:type)
-          end
-        end
-
-        def result_type_filter?
-          !result_type.nil?
-        end
-
-        # @return [Fixnum, nil]
-        def retweet_count
-          if @token_string.match(/\Aretweet:(?<count>\d+)\z/)
-            Regexp.last_match(:count).to_i
-          end
-        end
-
-        def retweet_count_filter?
-          !retweet_count.nil?
-        end
-
-        def to_s
-          @token_string
         end
       end
     end

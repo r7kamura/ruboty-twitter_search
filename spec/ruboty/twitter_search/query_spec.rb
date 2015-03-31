@@ -1,4 +1,4 @@
-RSpec.describe Ruboty::Handlers::TwitterSearch::Query do
+RSpec.describe Ruboty::TwitterSearch::Query do
   let(:query) do
     described_class.new(original_string)
   end
